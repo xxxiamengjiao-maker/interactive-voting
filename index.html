@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AI行家助手 · 形式偏好投票</title>
+<style>
+:root{
+  --blue:#1677ff; --blue-dark:#0958d9; --blue-soft:#EFF6FF; --blue-line:#BFDBFE;
+  --ink:#16181D; --ink2:#3D424D; --ink3:#757B87; --ink4:#9CA3AF;
+  --line:#E5E7EB; --line2:#F0F1F3; --bg:#F6F7F9; --card:#FFFFFF;
+  --amber:#B45309; --amber-bg:#FEF6E7;
+  --ok:#047857; --ok-bg:#EAF7F1;
+  --red:#E72C35; --red-soft:#FDECEE; --red-line:#F6C9CD; --red-dark:#C41E28;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.06);
+  --radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:780px;margin:0 auto;padding:0 16px 100px}
+
+.topbar{position:sticky;top:0;z-index:100;background:rgba(246,247,249,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:780px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:7px;font-weight:700;white-space:nowrap}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex:none}
+.brand small{font-weight:500;font-size:11px;color:var(--ink3)}
+.prog{flex:1;height:5px;border-radius:99px;background:var(--line2);overflow:hidden;min-width:60px}
+.prog > i{display:block;height:100%;width:0;background:var(--blue);border-radius:99px;transition:width .35s cubic-bezier(.4,0,.2,1)}
+.pill{font-size:12px;color:var(--ink3);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin-top:16px}
+h1{font-size:21px;line-height:1.4;margin:0 0 8px;letter-spacing:-.2px}
+p{margin:0 0 10px}
+.sub{color:var(--ink3);font-size:13.5px}
+.b{font-weight:700}
+.small{font-size:12.5px}
+.muted{color:var(--ink3)}
+
+.reward{background:linear-gradient(135deg,#fff7ed,#fef9c3);border:1.5px solid #fcd34d;border-radius:12px;padding:13px 16px;display:flex;align-items:center;gap:12px;margin-top:14px}
+.reward-icon{font-size:26px;flex:none}
+.reward-title{font-size:14px;font-weight:800;color:#92400e}
+.reward-sub{font-size:12px;color:#b45309;margin-top:1px}
+
+.alert{border-radius:11px;padding:12px 14px;font-size:13.5px;line-height:1.6;margin-top:12px;border:1px solid}
+.alert.blue{background:var(--blue-soft);border-color:var(--blue-line);color:#1e40af}
+.alert.red{background:var(--red-soft);border-color:var(--red-line);color:var(--red-dark)}
+.alert.ok{background:var(--ok-bg);border-color:#A7F3D0;color:var(--ok)}
+
+.btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;font-weight:600;padding:10px 18px;border-radius:10px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:hover{border-color:var(--ink4);background:#FAFAFB}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover{background:var(--blue-dark);border-color:var(--blue-dark)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--ink3);font-weight:500}
+.btn.ghost:hover{background:var(--line2);color:var(--ink)}
+.bar{display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap}
+.bar .spacer{flex:1}
+
+/* Demo对比区 */
+.phones-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;margin-top:16px}
+@media(max-width:580px){.phones-row{grid-template-columns:1fr;gap:24px}}
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.phone-name{font-size:13.5px;font-weight:700;color:var(--ink2);text-align:center}
+.tag{font-size:11px;font-weight:600;padding:2px 7px;border-radius:99px;margin-left:5px}
+.tag.a{background:#EFF6FF;color:var(--blue);border:1px solid var(--blue-line)}
+.tag.b{background:#F0FDF4;color:#15803d;border:1px solid #BBF7D0}
+.phone-shell{width:100%;max-width:280px;border:4px solid #1a1a1a;border-radius:24px;overflow:hidden;box-shadow:0 14px 44px rgba(0,0,0,.20);background:#f5f5f5;display:flex;flex-direction:column}
+.phone-bar-inner{background:#fff;text-align:center;font-size:12px;font-weight:600;padding:8px 0 5px;color:#111;border-bottom:1px solid #eee;letter-spacing:1px;flex-shrink:0}
+.phone-iframe{width:100%;height:480px;border:none;display:block;background:#f5f5f5}
+.pick-btn{width:100%;max-width:280px;padding:11px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:2px solid var(--line);background:#fff;color:var(--ink);transition:all .15s;text-align:center}
+.pick-btn:hover{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
+.pick-btn.on{border-color:var(--blue);background:var(--blue);color:#fff;box-shadow:0 4px 14px rgba(22,119,255,.3)}
+
+/* 题卡 */
+.q{border:1px solid var(--line);border-radius:var(--radius);background:#fff;box-shadow:var(--shadow);padding:20px;margin-top:14px;transition:border-color .2s}
+.q.done{border-left:3px solid var(--blue)}
+.q.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(231,44,53,.07)}
+.qtop{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+.qno{flex:none;width:26px;height:26px;border-radius:8px;background:var(--ink);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.q.done .qno{background:var(--blue)}
+.picked-badge{flex:none;font-size:11.5px;font-weight:700;color:#fff;background:var(--blue);border-radius:99px;padding:3px 10px;margin-top:2px;white-space:nowrap}
+.picked-badge.none{background:var(--line2);color:var(--ink3);font-weight:600}
+.qtext{font-size:15px;font-weight:700;line-height:1.5;letter-spacing:-.1px}
+.qsub{font-size:12.5px;color:var(--ink3);margin-top:3px}
+
+.opts{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.opt-btn{display:flex;align-items:flex-start;gap:11px;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:11px 14px;cursor:pointer;text-align:left;font:inherit;color:var(--ink);transition:all .13s;width:100%}
+.opt-btn:hover{border-color:var(--blue-line);background:var(--blue-soft)}
+.opt-btn.on{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 1.5px var(--blue)}
+.opt-circle{flex:none;width:18px;height:18px;border-radius:50%;border:2px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;margin-top:3px;transition:all .13s}
+.opt-btn.on .opt-circle{border-color:var(--blue);background:var(--blue)}
+.opt-circle::after{content:'';width:7px;height:7px;border-radius:50%;background:#fff;display:none}
+.opt-btn.on .opt-circle::after{display:block}
+.opt-label{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.5}
+.opt-desc{font-size:12px;color:var(--ink3);margin-top:2px;line-height:1.5}
+
+textarea{width:100%;font:inherit;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;transition:border-color .15s;resize:vertical;min-height:80px;line-height:1.6}
+textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(22,119,255,.09)}
+textarea::placeholder{color:var(--ink4)}
+.cnt-row{display:flex;justify-content:flex-end;font-size:12px;color:var(--ink4);margin-top:4px}
+
+.done-hero{text-align:center;padding:20px 0 14px}
+.done-icon{font-size:52px;margin-bottom:10px}
+.done-title{font-size:21px;font-weight:800;color:var(--blue)}
+.done-sub{font-size:14px;color:var(--ink3);margin-top:5px}
+.summary-list{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.summary-row{padding:11px 15px;border-bottom:1px solid var(--line2);display:flex;gap:10px;align-items:flex-start;background:#fff}
+.summary-row:last-child{border-bottom:none}
+.sq{font-size:12px;font-weight:700;color:var(--ink4);flex:none;margin-top:2px;width:22px}
+.sa{font-size:13px;color:var(--blue);font-weight:600;margin-top:2px}
+.st{font-size:12.5px;font-weight:600;color:var(--ink2)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .22s ease forwards}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shake{animation:shake .38s cubic-bezier(.36,.07,.19,.97)}
+.foot{text-align:center;color:var(--ink4);font-size:12px;margin-top:24px;line-height:1.8}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><span class="brand-dot"></span><span>AI行家助手<small style="display:inline;margin-left:5px">形式偏好投票</small></span></div>
+    <div class="prog"><i id="progBar"></i></div>
+    <span class="pill" id="progTxt">0 / 4 题</span>
+  </div>
+</div>
+
+<div class="wrap" id="app"></div>
+
+<script>
+const QUESTIONS = [
+  {
+    id:"q_main", type:"demo_pick",
+    text:"你更喜欢哪种交互形式？",
+    sub:"👇 两个版本都可以在手机里滚动点击体验，感受一下再做选择",
+    required:true,
+    demos:[
+      {value:"card", label:"方案 A · 卡片菜单式", tagClass:"a", desc:"点击分类按钮，逐层展开操作指引"},
+      {value:"chat", label:"方案 B · 纯对话式",   tagClass:"b", desc:"在聊天气泡里直接展示所有能力"}
+    ]
+  },
+  {
+    id:"q2", type:"radio",
+    text:"你最常用 AI行家助手 做什么？",
+    sub:"单选", required:true,
+    options:[
+      {value:"customer", label:"🔍 找客户 / 查商品池"},
+      {value:"product",  label:"📦 查商品库存 / 交期"},
+      {value:"order",    label:"🗒️ 查订单 / 物流"},
+      {value:"purchase", label:"🛒 查采购信息"},
+      {value:"finance",  label:"🧾 对账 / 开票"},
+      {value:"other",    label:"➕ 其他（找人 / OA / 知识库等）"},
+    ]
+  },
+  {
+    id:"q3", type:"radio",
+    text:"哪种形式更适合「新同事」快速上手？",
+    sub:"单选", required:true,
+    options:[
+      {value:"card", label:"方案 A · 卡片菜单式", desc:"分类清晰，按钮引导，不用记指令"},
+      {value:"chat", label:"方案 B · 纯对话式",   desc:"像聊天，直接说需求就行"},
+      {value:"same", label:"两种都差不多",         desc:""},
+    ]
+  },
+  {
+    id:"q4", type:"textarea",
+    text:"还有什么想说的？",
+    sub:"功能建议、体验吐槽、新需求都欢迎（选填）",
+    required:false,
+    placeholder:"例如：希望支持语音输入 / 某个功能入口太深不好找……"
+  }
+];
+
+const DEMO_A = `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;background:#f5f5f5;min-height:100vh}
+.wecom-card{background:#fff;width:100%;display:flex;flex-direction:column;min-height:100vh}
+.card-header{padding:14px 16px 10px;flex-shrink:0}
+.card-title{font-size:15px;font-weight:700;color:#111}
+.card-domain{font-size:12.5px;color:#888;margin-top:3px;display:none}
+.card-domain.visible{display:block}
+.card-sub{font-size:12.5px;color:#888;margin-top:6px;line-height:1.7}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 12px 12px;flex-shrink:0}
+.menu-btn{background:#1677ff;color:#fff;border:none;border-radius:8px;padding:11px 8px;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s;text-align:center;font-family:inherit}
+.menu-btn:hover{background:#0958d9}
+.menu-btn.other{background:#fff;color:#1677ff;border:1.5px solid #1677ff}
+.menu-btn.other:hover{background:#e6f0ff}
+.sub-panel{display:none;flex-direction:column;min-height:0}
+.sub-panel.active{display:flex}
+.suggest-panel{display:none;flex-direction:column;min-height:0}
+.suggest-panel.active{display:flex}
+.scroll-body{flex:1;overflow-y:auto;min-height:0}
+.sub-list{display:flex;flex-direction:column;padding:0 16px 8px}
+.sub-item{display:flex;flex-direction:column;padding:11px 0;border-top:1px solid #f2f2f2;cursor:pointer}
+.sub-item:first-of-type{border-top:none}
+.sub-item-title{font-size:13.5px;font-weight:600;color:#111}
+.sub-item-desc{font-size:12px;color:#888;margin-top:2px;line-height:1.5}
+.section-divider{font-size:11px;color:#bbb;padding:10px 0 4px;display:flex;align-items:center;gap:8px;user-select:none}
+.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:#e8e8e8}
+.suggest-list{display:flex;flex-direction:column;padding:4px 16px 8px}
+.suggest-item{padding:9px 0;border-top:1px solid #f2f2f2;flex-shrink:0}
+.suggest-item:first-of-type{border-top:none}
+.suggest-text{font-size:13px;color:#111;line-height:1.65}
+.suggest-tags-text{font-size:12px;color:#888;line-height:1.6;margin-top:3px}
+.example-row{font-size:11.5px;color:#999;line-height:1.6;margin-top:3px}
+.card-footer{display:flex;border-top:1px solid #ebebeb;padding:8px 12px;gap:8px;flex-shrink:0;background:#fff}
+.footer-btn{flex:1;padding:9px;border-radius:6px;font-size:13px;cursor:pointer;border:none;transition:background .15s;text-align:center;font-weight:500;font-family:inherit}
+.footer-btn.secondary{background:#f5f5f5;color:#555;border:1px solid #e0e0e0}
+.footer-btn.primary{background:#1677ff;color:#fff}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .18s ease forwards}
+</style></head><body>
+<div class="wecom-card">
+  <div class="card-header">
+    <div class="card-title">AI行家助手</div>
+    <div class="card-domain" id="cardDomain"></div>
+    <div class="card-sub" id="cardSub">你好！今天需要帮你查什么？<br/>客户、订单、商品、发票……选一个开始吧 👇</div>
+  </div>
+  <div class="menu-grid" id="menuGrid">
+    <button class="menu-btn" onclick="sel('customer')">🔍 找客户</button>
+    <button class="menu-btn" onclick="sel('product')">📦 查商品</button>
+    <button class="menu-btn" onclick="sel('order')">🗒️ 查订单</button>
+    <button class="menu-btn" onclick="sel('purchase')">🛒 采购查询</button>
+    <button class="menu-btn" onclick="sel('finance')">🧾 对账开票</button>
+    <button class="menu-btn other" onclick="sel('other')">➕ 其他</button>
+  </div>
+  <div class="sub-panel" id="subPanel">
+    <div class="scroll-body"><div class="sub-list" id="subGrid"></div></div>
+    <div class="card-footer">
+      <button class="footer-btn secondary" onclick="goHome()">返回上级</button>
+      <button class="footer-btn primary" onclick="goHome()">返回菜单</button>
+    </div>
+  </div>
+  <div class="suggest-panel" id="suggestPanel">
+    <div class="scroll-body"><div class="suggest-list" id="suggestList"></div></div>
+    <div class="card-footer">
+      <button class="footer-btn secondary" onclick="goSub()">返回上级</button>
+      <button class="footer-btn primary" onclick="goHome()">返回菜单</button>
+    </div>
+  </div>
+</div>
+<script>
+const D={
+  customer:{label:"找客户",suggests:[{text:'输入客户名称，发送 查客户 XX公司'},{text:'输入客户编码，发送 查商品池 C001，查询/下架该客户商品池 SKU'}]},
+  product:{label:"查商品",suggests:[{text:'发送关键词、SKU 或商品图片，AI 自动找货'},{text:'输入 SKU+城市，发送 查商品 SKUXX 上海，查交期及库存'},{text:'输入 SKU，发送 查文件 SKUXX，获取商品资料文件'},{text:'输入品牌名称，发送 查授权 XX品牌，获取品牌授权文件'}]},
+  order:{label:"查订单",suggests:[{text:'输入订单号，发送 查物流 SOXXXX，查履约/物流进度'},{text:'输入客户编码，发送 查订单号 C001，查该客户名下的销售订单号'},{text:'输入采购单号/VC送货单号，发送 关联单号 XXXX，互查单号'},{text:'输入送货单号，发送 查送货单 XXXX，查送货单详情'},{dividerBefore:true,dividerText:"其他操作",text:'输入销售单号，发送 创建交货单 SOXXXX'},{text:'输入销售单号/DN单号，发送 取消交货单 XXXX'}]},
+  purchase:{label:"采购查询",suggests:[{text:'输入采购单号，发送 查采购单 XXXX，查采购单详情及状态'},{text:'输入采购单号，发送 查到货时间 XXXX，查预计到货时间'},{text:'输入采购单号，发送 查随货资料 XXXX，获取随货文件'}]},
+  finance:{label:"对账开票",suggests:[{text:'输入客户编码，发送 查信用 C001，查信用额度/逾期情况'},{text:'输入订单号，发送 查发票 SOXXXX，查发票状态/进度'},{dividerBefore:true,dividerText:"开票操作",text:'输入订单号，发送 申请开票 XXXX，支持单独/合并开票',tagsText:'支持：SAP销售单、OMS销售单、SAP交货单、OMS交货单、OMS外围单',example:'例：申请开票 1500021012 1010096815 合并'}]},
+  other:{label:"其他",subDomains:[{key:'find_person',title:'找人',desc:'找产线/销售客服/仓库对接人/值班人员',hot:true},{key:'knowledge',title:'找知识',desc:'公司制度·人事行政政策·工业品产品知识·IT',hot:true},{key:'personal',title:'查个人信息',desc:'考勤/假期/报销/津贴',hot:true},{key:'oa',title:'OA 申请',desc:'请假·补卡·会议·用印·合同签署',hot:true},{key:'ticket',title:'工单',desc:'工单查询/一句话发工单',hot:false},{key:'collab',title:'协同',desc:'协同查询/创建合同盖章申请',hot:false},{key:'material',title:'资料',desc:'资料查询/获取模板中心文件',hot:false},{key:'digital',title:'数智化入口',desc:'PRA/AI开发者平台地址查询',hot:false}]}
+};
+const SD={
+  find_person:{label:"其他·找人",suggests:[{text:'发送 找产线 XX工厂，查找产线人员联系方式'},{text:'发送 找销售 XX公司，根据客户名称找对应销售/客服'},{text:'发送 找仓库 XX仓库，根据仓库名称找仓库对接人'},{text:'发送 查值班，查找当前值班人员'}]},
+  knowledge:{label:"其他·找知识",suggests:[{text:'发送 查制度 关键词，查公司制度/人事行政政策',example:'例：查制度 年假规则'},{text:'发送 查产品知识 关键词，查询工业品领域产品知识',example:'例：查产品知识 断路器选型'},{text:'发送 查IT知识 关键词，查IT系统/工具相关问题',example:'例：查IT知识 VPN怎么连'}]},
+  personal:{label:"其他·查个人信息",suggests:[{text:'发送 查考勤，查询本月考勤记录'},{text:'发送 查假期，查询剩余假期余额'},{text:'发送 查报销，查询报销进度/记录'},{text:'发送 查津贴，查询津贴发放情况'}]},
+  oa:{label:"其他·OA申请",suggests:[{text:'直接说想请什么假、什么时间，AI自动创建草稿',example:'例：帮我请假2个小时 明天下午'},{text:'直接说要补哪天哪个时段的卡，AI自动创建草稿',example:'例：帮我补卡 昨天上午 忘打了'},{dividerBefore:true,dividerText:"会议",text:'说清时间和主题，AI帮你预约会议',example:'例：预约会议 明天14:00 季度复盘'},{text:'发送 查我的会议，查看近期会议安排'},{dividerBefore:true,dividerText:"用印·签署",text:'发对账单文件+客户号，AI自动发起用印申请',example:'例：A790013 06-30 客户对账单用印申请'},{text:'发合同文件+客户号金额，AI自动发起签署申请',example:'例：A3425041 300元 客户合同签署申请'}]},
+  ticket:{label:"其他·工单",suggests:[{text:'发送 查工单，进入工单总入口，查询工单状态'},{text:'直接描述问题，发送 创建工单 问题描述，一句话发工单',example:'例：创建工单 客户C001反馈商品破损，需要处理'}]},
+  collab:{label:"其他·协同",suggests:[{text:'发送 查协同，进入协同总入口，查询协同任务'},{text:'输入销售订单号，发送 盖章申请 SOXXXX，创建合同盖章协同',example:'例：盖章申请 1500021012'}]},
+  material:{label:"其他·资料",suggests:[{text:'发送 查资料，进入资料总入口，查询资料文件'},{text:'发送 查模板 关键词，从模板中心获取对应文件',example:'例：查模板 合同模板'}]},
+  digital:{label:"其他·数智化入口",suggests:[{text:'发送 PRA地址，获取PRA平台入口链接'},{text:'发送 AI开发者平台，获取AI开发者平台入口链接'}]}
+};
+let cur=null;
+function setLabel(t){const el=document.getElementById("cardDomain");el.textContent=t;el.classList.add("visible")}
+function sel(key){cur=key;const d=D[key];setLabel(d.label);document.getElementById("cardSub").style.display="none";document.getElementById("menuGrid").style.display="none";if(key==='other'){renderSub(d.subDomains);document.getElementById("subPanel").classList.add("active")}else{renderSuggests(d.suggests);document.getElementById("suggestPanel").classList.add("active")}}
+function renderSub(subs){const g=document.getElementById("subGrid");g.innerHTML="";let shown=false;subs.forEach(s=>{if(!s.hot&&!shown){const d=document.createElement("div");d.className="section-divider";d.textContent="其他功能";g.appendChild(d);shown=true}const item=document.createElement("div");item.className="sub-item fade-up";item.innerHTML='<div class="sub-item-title">'+s.title+'</div><div class="sub-item-desc">'+s.desc+'</div>';item.onclick=()=>selSub(s.key);g.appendChild(item)})}
+function selSub(key){const d=SD[key];setLabel(d.label);document.getElementById("subPanel").classList.remove("active");renderSuggests(d.suggests);document.getElementById("suggestPanel").classList.add("active")}
+function renderSuggests(list){const el=document.getElementById("suggestList");el.innerHTML="";list.forEach((s,i)=>{if(s.dividerBefore){const d=document.createElement("div");d.className="section-divider";d.textContent=s.dividerText||"其他操作";el.appendChild(d)}const item=document.createElement("div");item.className="suggest-item fade-up";if(s.dividerBefore||i===0)item.style.borderTop="none";let h='<div class="suggest-text">'+s.text+'</div>';if(s.tagsText)h+='<div class="suggest-tags-text">'+s.tagsText+'</div>';if(s.example)h+='<div class="example-row">'+s.example+'</div>';item.innerHTML=h;el.appendChild(item)});el.closest('.scroll-body').scrollTop=0}
+function goSub(){document.getElementById("suggestPanel").classList.remove("active");if(cur==='other'){setLabel(D.other.label);renderSub(D.other.subDomains);document.getElementById("subPanel").classList.add("active")}else goHome()}
+function goHome(){document.getElementById("menuGrid").style.display="grid";document.getElementById("subPanel").classList.remove("active");document.getElementById("suggestPanel").classList.remove("active");const el=document.getElementById("cardDomain");el.textContent="";el.classList.remove("visible");document.getElementById("cardSub").style.display="block";cur=null}
+<\/script></body></html>`;
+
+const DEMO_B = `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;background:#f5f5f5}
+.phone-inner{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.chat-header{background:#fff;padding:10px 14px 8px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f0f0f0;flex-shrink:0}
+.avatar{width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,#1677ff,#69b1ff);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.chat-header-name{font-size:14px;font-weight:600;color:#111}
+.chat-area{flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;background:#f5f5f5}
+.chat-area::-webkit-scrollbar{width:3px}
+.chat-area::-webkit-scrollbar-thumb{background:#ddd;border-radius:3px}
+.msg-row{display:flex;gap:8px;align-items:flex-start}
+.msg-row.user{flex-direction:row-reverse}
+.msg-avatar{width:30px;height:30px;border-radius:6px;flex-shrink:0;background:linear-gradient(135deg,#1677ff,#69b1ff);display:flex;align-items:center;justify-content:center;font-size:14px}
+.msg-avatar.user-av{background:linear-gradient(135deg,#52c41a,#95de64)}
+.bubble{max-width:285px;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.10);overflow:hidden;font-size:13px;color:#111}
+.card-source{padding:7px 13px 5px;font-size:11px;color:#999;display:flex;align-items:center;gap:5px;border-bottom:1px solid #f2f2f2}
+.card-source-dot{width:14px;height:14px;border-radius:3px;background:linear-gradient(135deg,#1677ff,#69b1ff);display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:#fff;flex-shrink:0}
+.card-body{padding:10px 13px 12px}
+.card-title{font-size:15px;font-weight:700;color:#111;line-height:1.45;margin-bottom:3px}
+.card-subtitle{font-size:12px;color:#888;margin-bottom:8px;line-height:1.5}
+.text-divider{font-size:11px;color:#d0d0d0;letter-spacing:1px;margin:7px 0;user-select:none}
+.section-header{font-size:12.5px;font-weight:600;color:#333;margin-bottom:4px;margin-top:2px;display:flex;align-items:center;gap:4px}
+.section-items{display:flex;flex-direction:column;gap:3px;margin-bottom:2px}
+.section-item{font-size:12px;color:#555;line-height:1.65;padding-left:10px;position:relative}
+.section-item::before{content:'·';position:absolute;left:2px;color:#aaa;font-weight:700}
+.cmd{color:#1677ff;font-weight:500;font-size:12px}
+.plain-bubble{max-width:260px;padding:10px 13px;border-radius:10px;font-size:13px;line-height:1.7;color:#111;background:#95ec69;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.input-bar{background:#fff;padding:8px 12px;border-top:1px solid #eee;flex-shrink:0;display:flex;align-items:center;gap:8px}
+.input-fake{flex:1;background:#f5f5f5;border-radius:18px;padding:7px 14px;font-size:13px;color:#bbb}
+.send-btn{width:32px;height:32px;border-radius:50%;background:#1677ff;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;flex-shrink:0;color:#fff}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .25s ease forwards}
+</style></head>
+<body>
+<div class="phone-inner">
+  <div class="chat-header">
+    <div class="avatar">🤖</div>
+    <div class="chat-header-name">AI行家助手</div>
+  </div>
+  <div class="chat-area">
+    <div class="msg-row user fade-up">
+      <div class="msg-avatar user-av">👤</div>
+      <div class="plain-bubble">你能帮我做哪些事？</div>
+    </div>
+    <div class="msg-row fade-up">
+      <div class="msg-avatar">🤖</div>
+      <div class="bubble">
+        <div class="card-source"><span class="card-source-dot">A</span>AI行家助手</div>
+        <div class="card-body">
+          <div class="card-title">你好！我能帮你处理这些事 👋</div>
+          <div class="card-subtitle">直接说你要做什么就行，不用记指令格式</div>
+          <div class="text-divider">————————————</div>
+          <div class="section-header">🔍 找客户</div>
+          <div class="section-items">
+            <div class="section-item">查客户信息：<span class="cmd">查客户 XX公司</span></div>
+            <div class="section-item">查商品池/下架SKU：<span class="cmd">查商品池 C001</span></div>
+          </div>
+          <div class="text-divider">————————————</div>
+          <div class="section-header">📦 查商品</div>
+          <div class="section-items">
+            <div class="section-item">找货：发关键词、SKU或图片</div>
+            <div class="section-item">查库存交期：<span class="cmd">查商品 SKUXX 上海</span></div>
+            <div class="section-item">查资料/授权文件：<span class="cmd">查文件 SKUXX</span></div>
+          </div>
+          <div class="text-divider">————————————</div>
+          <div class="section-header">🗒️ 查订单</div>
+          <div class="section-items">
+            <div class="section-item">查物流进度：<span class="cmd">查物流 SOXXXX</span></div>
+            <div class="section-item">查送货单/关联单号互查</div>
+            <div class="section-item">创建/取消交货单</div>
+          </div>
+          <div class="text-divider">————————————</div>
+          <div class="section-header">🛒 采购查询</div>
+          <div class="section-items">
+            <div class="section-item">查采购单详情、到货时间、随货资料</div>
+          </div>
+          <div class="text-divider">————————————</div>
+          <div class="section-header">🧾 对账开票</div>
+          <div class="section-items">
+            <div class="section-item">查信用额度/逾期：<span class="cmd">查信用 C001</span></div>
+            <div class="section-item">查发票状态：<span class="cmd">查发票 SOXXXX</span></div>
+            <div class="section-item">申请开票（支持合并）：<span class="cmd">申请开票 XXXX</span></div>
+          </div>
+          <div class="text-divider">————————————</div>
+          <div class="section-header">➕ 其他办公</div>
+          <div class="section-items">
+            <div class="section-item">找人：产线/销售客服/仓库/值班</div>
+            <div class="section-item">查知识：公司制度/产品知识/IT</div>
+            <div class="section-item">查个人信息：考勤/假期/报销</div>
+            <div class="section-item">OA申请：请假、补卡、会议、用印、合同签署</div>
+            <div class="section-item">工单/协同/资料模板/数智化入口</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="msg-row user fade-up">
+      <div class="msg-avatar user-av">👤</div>
+      <div class="plain-bubble">帮我查一下客户A790013的订单</div>
+    </div>
+    <div class="msg-row fade-up">
+      <div class="msg-avatar">🤖</div>
+      <div class="bubble">
+        <div class="card-source"><span class="card-source-dot">A</span>AI行家助手</div>
+        <div class="card-body">
+          <div class="card-title">请问你想查哪类信息？</div>
+          <div class="text-divider">————————————</div>
+          <div class="section-items">
+            <div class="section-item">该客户名下的销售订单号<br><span class="cmd">查订单号 A790013</span></div>
+            <div class="section-item" style="margin-top:4px">某张订单的物流进度<br><span class="cmd">查物流 SOXXXX</span></div>
+            <div class="section-item" style="margin-top:4px">对账单用印申请<br><span class="cmd">A790013 用印申请</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="input-bar">
+    <div class="input-fake">直接说你要做什么…</div>
+    <div class="send-btn">➤</div>
+  </div>
+</div>
+</body></html>`;
+
+/* ===== 状态 ===== */
+let answers = {};
+let submitted = false;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const countLen = s => (s||"").replace(/\s/g,"").length;
+
+function getProgress(){
+  const req=QUESTIONS.filter(q=>q.required);
+  const done=req.filter(q=>!!answers[q.id]);
+  return {done:done.length,total:req.length};
+}
+function renderTop(){
+  const {done,total}=getProgress();
+  const bar=$("#progBar"),txt=$("#progTxt");
+  if(bar)bar.style.width=Math.round(done/total*100)+"%";
+  if(txt)txt.textContent=done+" / "+total+" 题";
+}
+
+function renderAll(){
+  const app=$("#app");
+  if(submitted){app.innerHTML=renderDone();return;}
+  let html=`
+  <div class="card fade-up">
+    <h1>AI行家助手 · 你更喜欢哪种形式？🤔</h1>
+    <p class="sub">我们正在对比两种交互设计，想听听你的真实感受。<strong>约 1 分钟</strong>填完。</p>
+    <div class="reward">
+      <div class="reward-icon">🧋</div>
+      <div>
+        <div class="reward-title">前 5 名填写送奶茶！</div>
+        <div class="reward-sub">填完截图发给我，先到先得，送完为止 🎉</div>
+      </div>
+    </div>
+    <div class="alert blue" style="margin-top:12px">
+      👇 <strong>两个版本都可以在手机里滚动点击体验</strong>，感受一下再做选择
+    </div>
+  </div>`;
+  QUESTIONS.forEach((q,i)=>{
+    html += q.type==="demo_pick" ? renderDemoPick(q,i) : renderNormalQ(q,i);
+  });
+  html+=`
+  <div id="errBox"></div>
+  <div class="card fade-up">
+    <div class="bar" style="margin-top:0">
+      <div class="spacer"></div>
+      <button class="btn primary" onclick="doSubmit()">提交投票 →</button>
+    </div>
+    <div class="small muted" style="margin-top:10px;text-align:center">填完截图发给我，前 5 名送奶茶 🧋</div>
+  </div>
+  <div class="foot">AI行家助手 · 内部体验调研 · 数据仅用于产品优化</div>`;
+  app.innerHTML=html;
+  const ifA=document.getElementById("if_card");
+  const ifB=document.getElementById("if_chat");
+  if(ifA) ifA.srcdoc=DEMO_A;
+  if(ifB) ifB.srcdoc=DEMO_B;
+  renderTop();
+}
+
+function renderDemoPick(q,i){
+  const val=answers[q.id];
+  return `<div class="q${val?" done":""} fade-up" id="q_${q.id}">
+    <div class="qtop">
+      <span class="qno">${i+1}</span>
+      <div style="flex:1">
+        <div class="qtext">${esc(q.text)}</div>
+        <div class="qsub">${esc(q.sub)}</div>
+      </div>
+      <span class="picked-badge${val?"":" none"}">${val?"✓ 已选":"必填"}</span>
+    </div>
+    <div class="phones-row">
+      ${q.demos.map(d=>`
+      <div class="phone-wrap">
+        <div class="phone-name">${esc(d.label)}<span class="tag ${d.tagClass}">${d.tagClass==='a'?'A':'B'}</span></div>
+        <div class="phone-shell">
+          <div class="phone-bar-inner">10:57</div>
+          <iframe id="if_${d.value==='card'?'card':'chat'}" class="phone-iframe" scrolling="yes" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+        <button class="pick-btn${val===d.value?" on":""}" onclick="pickDemo('${q.id}','${d.value}')">
+          ${val===d.value?"✓ 已选择这个方案":"选择这个方案"}
+        </button>
+        <div class="small muted" style="text-align:center;margin-top:4px">${esc(d.desc)}</div>
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function renderNormalQ(q,i){
+  const val=answers[q.id];
+  const isDone=q.type==="radio"?!!val:true;
+  let inner="";
+  if(q.type==="radio"){
+    inner=`<div class="opts">${q.options.map(o=>`
+      <button class="opt-btn${val===o.value?" on":""}" onclick="pickOpt('${q.id}','${o.value}')">
+        <span class="opt-circle"></span>
+        <span>
+          <span class="opt-label">${esc(o.label)}</span>
+          ${o.desc?`<div class="opt-desc">${esc(o.desc)}</div>`:""}
+        </span>
+      </button>`).join("")}</div>`;
+  } else if(q.type==="textarea"){
+    const v=answers[q.id]||"";
+    inner=`<textarea id="ta_${q.id}" placeholder="${esc(q.placeholder||"")}" oninput="setTA('${q.id}',this.value)">${esc(v)}</textarea>
+      <div class="cnt-row">${countLen(v)>0?countLen(v)+" 字":""}</div>`;
+  }
+  return `<div class="q${isDone?" done":""} fade-up" id="q_${q.id}">
+    <div class="qtop">
+      <span class="qno">${i+1}</span>
+      <div style="flex:1">
+        <div class="qtext">${esc(q.text)}</div>
+        ${q.sub?`<div class="qsub">${esc(q.sub)}</div>`:""}
+      </div>
+      <span class="picked-badge${isDone?"":" none"}">${isDone?(q.type==="textarea"?"选填":"✓ 已选"):(q.required?"必填":"选填")}</span>
+    </div>
+    ${inner}
+  </div>`;
+}
+
+function pickDemo(qid,val){
+  answers[qid]=val;
+  const q=QUESTIONS.find(q=>q.id===qid);
+  q.demos.forEach(d=>{
+    const btn=document.querySelector(`[onclick="pickDemo('${qid}','${d.value}')"]`);
+    if(btn){btn.classList.toggle("on",d.value===val);btn.textContent=d.value===val?"✓ 已选择这个方案":"选择这个方案";}
+  });
+  const card=document.getElementById("q_"+qid);
+  if(card){
+    card.classList.add("done");
+    const pk=card.querySelector(".picked-badge");
+    if(pk){pk.textContent="✓ 已选";pk.classList.remove("none");}
+    const qno=card.querySelector(".qno");
+    if(qno)qno.style.background="var(--blue)";
+  }
+  renderTop();
+}
+
+function pickOpt(qid,val){
+  answers[qid]=val;
+  const q=QUESTIONS.find(q=>q.id===qid);
+  document.querySelectorAll(`#q_${qid} .opt-btn`).forEach((btn,i)=>{
+    btn.classList.toggle("on",q.options[i].value===val);
+  });
+  const card=document.getElementById("q_"+qid);
+  if(card){
+    card.classList.add("done");
+    const pk=card.querySelector(".picked-badge");
+    if(pk){pk.textContent="✓ 已选";pk.classList.remove("none");}
+    const qno=card.querySelector(".qno");
+    if(qno)qno.style.background="var(--blue)";
+  }
+  renderTop();
+}
+
+function setTA(qid,val){
+  answers[qid]=val;
+  const len=countLen(val);
+  const cnt=document.querySelector(`#q_${qid} .cnt-row`);
+  if(cnt)cnt.textContent=len>0?len+" 字":"";
+}
+
+function doSubmit(){
+  const errs=[];
+  QUESTIONS.forEach((q,i)=>{
+    if(!q.required)return;
+    if(!answers[q.id])errs.push({id:q.id,msg:`第 ${i+1} 题「${q.text}」未选择`});
+  });
+  document.querySelectorAll(".q").forEach(e=>e.classList.remove("err","shake"));
+  const box=$("#errBox");
+  if(errs.length){
+    errs.forEach(e=>{const el=document.getElementById("q_"+e.id);if(el){el.classList.add("err");void el.offsetWidth;el.classList.add("shake");}});
+    box.innerHTML=`<div class="alert red"><b>还有 ${errs.length} 题未填</b><br>${errs.map(e=>"· "+esc(e.msg)).join("<br>")}</div>`;
+    document.getElementById("q_"+errs[0].id).scrollIntoView({behavior:"smooth",block:"center"});
+    return;
+  }
+  box.innerHTML="";
+  submitted=true;
+  $("#app").innerHTML=renderDone();
+  renderTop();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function renderDone(){
+  const map={card:"方案 A · 卡片菜单式 🃏",chat:"方案 B · 纯对话式 💬"};
+  const choice=map[answers["q_main"]]||"—";
+  return `
+  <div class="card fade-up">
+    <div class="done-hero">
+      <div class="done-icon">🎉</div>
+      <div class="done-title">感谢你的投票！</div>
+      <div class="done-sub">你选择了：<strong>${choice}</strong></div>
+    </div>
+    <div class="reward">
+      <div class="reward-icon">🧋</div>
+      <div>
+        <div class="reward-title">记得截图发给我领奶茶！</div>
+        <div class="reward-sub">前 5 名填写可领，先到先得 · 截这个页面就行 📸</div>
+      </div>
+    </div>
+    <div class="alert ok" style="margin-top:12px">
+      <div class="b" style="margin-bottom:3px">✅ 已收到你的反馈</div>
+      <div>我们会综合大家的意见，持续优化 AI行家助手 的交互体验 💪</div>
+    </div>
+    <div class="summary-list">
+      <div style="padding:10px 15px;background:#FAFAFB;border-bottom:1px solid var(--line);font-size:12.5px;font-weight:700;color:var(--ink3)">你的填写摘要</div>
+      ${QUESTIONS.filter(q=>answers[q.id]).map((q,i)=>{
+        let val=answers[q.id];
+        if(q.type==="demo_pick"){const d=q.demos.find(d=>d.value===val);val=d?d.label:val;}
+        else if(q.type==="radio"){const o=q.options.find(o=>o.value===val);val=o?o.label:val;}
+        return `<div class="summary-row"><span class="sq">Q${i+1}</span><div><div class="st">${esc(q.text)}</div><div class="sa">${esc(val)}</div></div></div>`;
+      }).join("")}
+    </div>
+    <div class="bar"><div class="spacer"></div><button class="btn ghost" onclick="location.reload()">重新填写</button></div>
+  </div>
+  <div class="foot">AI行家助手 · 内部体验调研 · 数据仅用于产品优化</div>`;
+}
+
+renderAll();
+</script>
+</body>
+</html>
